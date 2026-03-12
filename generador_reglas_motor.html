@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador de Reglas — Toquea</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green:       #00C16A;
+    --green-dark:  #009F58;
+    --green-light: #E6F9F0;
+    --green-mid:   #CCFCE5;
+    --bg:          #F2F7F5;
+    --white:       #FFFFFF;
+    --surface2:    #F8FAF9;
+    --border:      #DDE8E3;
+    --border2:     #C5D9D0;
+    --text:        #0F2922;
+    --text2:       #3A5A50;
+    --muted:       #7A9E94;
+    --danger:      #E53E3E;
+    --danger-bg:   #FFF0F0;
+    --amber:       #D97706;
+    --amber-bg:    #FFFBEB;
+    --shadow-sm:   0 1px 3px rgba(0,80,40,0.08);
+    --shadow:      0 4px 16px rgba(0,80,40,0.10);
+    --r:           12px;
+    --rs:          8px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;min-height:100vh;}
+
+  /* TOPBAR */
+  .topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 32px;height:62px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-sm);}
+  .tlogo{display:flex;align-items:center;gap:9px;}
+  .tlogo-icon{width:30px;height:30px;background:var(--green);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:800;color:#fff;}
+  .tlogo-text{font-size:1.05rem;font-weight:800;color:var(--text);letter-spacing:-.03em;}
+  .tlogo-text span{color:var(--green);}
+  .tdiv{width:1px;height:18px;background:var(--border);}
+  .tsub{font-size:.73rem;color:var(--muted);font-weight:500;}
+  .tright{margin-left:auto;}
+  .prod-badge{display:none;align-items:center;gap:5px;background:var(--green-light);color:var(--green-dark);font-size:.68rem;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid var(--green-mid);font-family:'JetBrains Mono',monospace;}
+  .prod-badge.show{display:inline-flex;}
+  .prod-badge::before{content:'';width:5px;height:5px;background:var(--green);border-radius:50%;}
+
+  /* LAYOUT */
+  .layout{display:grid;grid-template-columns:1fr 350px;gap:22px;max-width:1260px;margin:0 auto;padding:26px 22px 80px;}
+  .main-col,.side-col{display:flex;flex-direction:column;gap:18px;}
+
+  /* CARDS */
+  .card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow-sm);}
+  .card-head{padding:18px 22px 0;display:flex;align-items:center;gap:9px;margin-bottom:16px;}
+  .step{width:22px;height:22px;background:var(--green);color:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:800;flex-shrink:0;}
+  .step.dark{background:var(--text2);}
+  .card-head h2{font-size:.9rem;font-weight:700;color:var(--text);letter-spacing:-.02em;}
+  .cbody{padding:0 22px 22px;}
+
+  /* FORM */
+  label{display:block;font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+  select,input[type=text]{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:.85rem;font-weight:500;padding:8px 11px;outline:none;transition:border-color .16s,box-shadow .16s,background .16s;appearance:none;-webkit-appearance:none;}
+  select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237A9E94' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:30px;cursor:pointer;}
+  select:focus,input[type=text]:focus{border-color:var(--green);background:#fff;box-shadow:0 0 0 3px rgba(0,193,106,.12);}
+  select option{background:#fff;color:var(--text);}
+  .field{display:flex;flex-direction:column;}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px;}
+  .mb{margin-bottom:13px;}
+
+  /* PREFIX INPUT */
+  .pfx-wrap{display:flex;align-items:stretch;border:1.5px solid var(--border);border-radius:var(--rs);overflow:hidden;background:var(--surface2);transition:border-color .16s,box-shadow .16s;}
+  .pfx-wrap:focus-within{border-color:var(--green);box-shadow:0 0 0 3px rgba(0,193,106,.12);background:#fff;}
+  .pfx{background:var(--green-light);color:var(--green-dark);font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:700;padding:8px 9px;border-right:1.5px solid var(--border);display:flex;align-items:center;}
+  .pfx-wrap input{border:none;border-radius:0;box-shadow:none!important;background:transparent;flex:1;}
+  .pfx-wrap input:focus{background:transparent;}
+
+  /* COMPOUND */
+  .cmpd-box{background:#F0FBF6;border:1.5px solid var(--green-mid);border-radius:var(--rs);padding:16px;margin-top:12px;}
+  .cmpd-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .cmpd-title{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--green-dark);}
+  .op-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:7px 11px;background:var(--white);border:1px solid var(--border);border-radius:6px;}
+  .op-row label{margin:0;text-transform:none;font-size:.73rem;font-weight:600;color:var(--text2);letter-spacing:0;}
+  .op-row select{max-width:195px;padding:4px 28px 4px 8px;font-size:.78rem;}
+  .sub-items{display:flex;flex-direction:column;gap:9px;}
+  .sub-item{background:var(--white);border:1.5px solid var(--border);border-radius:var(--rs);padding:13px;}
+  .sub-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}
+  .sub-num{font-size:.65rem;font-weight:700;color:var(--green-dark);text-transform:uppercase;letter-spacing:.08em;background:var(--green-light);padding:2px 7px;border-radius:4px;}
+
+  /* BUTTONS */
+  .btn{display:inline-flex;align-items:center;gap:5px;padding:8px 16px;border-radius:var(--rs);font-family:'Plus Jakarta Sans',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;border:none;transition:all .14s;letter-spacing:-.01em;white-space:nowrap;}
+  .btn-g{background:var(--green);color:#fff;box-shadow:0 2px 8px rgba(0,193,106,.28);}
+  .btn-g:hover{background:var(--green-dark);transform:translateY(-1px);}
+  .btn-o{background:transparent;color:var(--green-dark);border:1.5px solid var(--green);}
+  .btn-o:hover{background:var(--green-light);}
+  .btn-gh{background:transparent;color:var(--text2);border:1.5px solid var(--border);}
+  .btn-gh:hover{background:var(--surface2);border-color:var(--border2);}
+  .btn-d{background:transparent;color:var(--danger);border:1.5px solid rgba(229,62,62,.25);padding:4px 9px;font-size:.73rem;}
+  .btn-d:hover{background:var(--danger-bg);border-color:var(--danger);}
+  .btn-sm{padding:5px 11px;font-size:.75rem;}
+  .arow{display:flex;align-items:center;gap:9px;margin-top:16px;flex-wrap:wrap;}
+
+  /* RULES */
+  .rules-list{display:flex;flex-direction:column;gap:7px;}
+  .rule-item{display:flex;align-items:center;gap:11px;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--rs);background:var(--white);transition:border-color .16s,box-shadow .16s;animation:fu .22s ease;}
+  @keyframes fu{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+  .rule-item:hover{border-color:var(--border2);box-shadow:var(--shadow-sm);}
+  .ridx{width:22px;height:22px;background:var(--green-light);color:var(--green-dark);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:800;flex-shrink:0;font-family:'JetBrains Mono',monospace;}
+  .rbody{flex:1;min-width:0;}
+  .ralias{font-size:.77rem;font-weight:700;color:var(--text);font-family:'JetBrains Mono',monospace;margin-bottom:2px;}
+  .rcond{font-size:.7rem;color:var(--muted);font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:310px;}
+  .pill{font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:20px;flex-shrink:0;font-family:'JetBrains Mono',monospace;letter-spacing:.04em;}
+  .pill-o{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(217,119,6,.2);}
+  .pill-r{background:var(--danger-bg);color:var(--danger);border:1px solid rgba(229,62,62,.2);}
+  .pill-c{background:var(--green-light);color:var(--green-dark);border:1px solid var(--green-mid);}
+  .empty-r{text-align:center;padding:28px 16px;color:var(--muted);border:1.5px dashed var(--border2);border-radius:var(--rs);background:var(--surface2);}
+  .empty-r .ei{font-size:1.8rem;margin-bottom:7px;}
+  .empty-r p{font-size:.75rem;font-weight:500;line-height:1.5;}
+
+  /* STATS */
+  .stat-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);}
+  .stat-row:last-child{border:none;padding-bottom:0;}
+  .slabel{font-size:.73rem;color:var(--text2);font-weight:500;}
+  .sval{font-size:.82rem;font-weight:700;color:var(--text);font-family:'JetBrains Mono',monospace;}
+  .sval.g{color:var(--green-dark);}
+
+  /* FILENAME */
+  .fname{display:flex;align-items:center;gap:7px;padding:9px 11px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--rs);font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text2);font-weight:500;}
+  .fname .fi{color:var(--green);font-size:.95rem;}
+  .fname .fn{color:var(--text);font-weight:600;}
+
+  /* JSON */
+  .jbox{background:#0A1A14;border-radius:var(--rs);padding:14px;font-family:'JetBrains Mono',monospace;font-size:.72rem;line-height:1.75;color:#94a3b8;overflow:auto;max-height:340px;white-space:pre;}
+  .jk{color:#6EE7B7;} .js{color:#FCD34D;} .jn{color:#93C5FD;} .jb{color:#F9A8D4;}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:26px;right:26px;padding:10px 16px;border-radius:9px;font-size:.78rem;font-weight:700;z-index:999;box-shadow:var(--shadow);transform:translateY(50px) scale(.95);opacity:0;transition:all .28s cubic-bezier(.34,1.56,.64,1);display:flex;align-items:center;gap:7px;}
+  .toast.show{transform:translateY(0) scale(1);opacity:1;}
+  .tok{background:var(--green);color:#fff;}
+  .terr{background:var(--danger);color:#fff;}
+
+  @media(max-width:900px){.layout{grid-template-columns:1fr}.side-col{order:-1}.g3{grid-template-columns:1fr 1fr}}
+  @media(max-width:560px){.g2,.g3{grid-template-columns:1fr}.topbar,.layout{padding-left:14px;padding-right:14px}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tlogo">
+    <div class="tlogo-icon">T</div>
+    <div class="tlogo-text">toquea <span>rules</span></div>
+  </div>
+  <div class="tdiv"></div>
+  <span class="tsub">Constructor de reglas de evaluación crediticia</span>
+  <div class="tright">
+    <div class="prod-badge" id="topbarProd"></div>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- ══ MAIN ══ -->
+  <div class="main-col">
+
+    <!-- 1. Producto -->
+    <div class="card">
+      <div class="card-head"><div class="step">1</div><h2>Selección de Producto</h2></div>
+      <div class="cbody">
+        <div class="g2">
+          <div class="field">
+            <label>Producto / Convenio</label>
+            <select id="producto" onchange="onProdChange()">
+              <option value="">— Seleccionar producto —</option>
+              <option value="CONVENIO-ATIC">CONVENIO-ATIC</option>
+              <option value="CONVENIO-3A-TIENDAS">CONVENIO-3A-TIENDAS</option>
+              <option value="CONVENIO-3A-ADMIN">CONVENIO-3A-ADMIN</option>
+              <option value="CONVENIO-TACZANA">CONVENIO-TACZANA</option>
+              <option value="CONVENIO-FENIZIAM-ADMIN">CONVENIO-FENIZIAM-ADMIN</option>
+              <option value="CONVENIO-FENIZIAM-VTAS">CONVENIO-FENIZIAM-VTAS</option>
+              <option value="CONVENIO-3ISOLUTIONS">CONVENIO-3ISOLUTIONS</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Archivo de salida</label>
+            <div class="fname">
+              <span class="fi">📄</span>
+              <span id="fnameText" style="color:var(--muted)">Selecciona un producto</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Nueva Regla -->
+    <div class="card">
+      <div class="card-head"><div class="step">2</div><h2>Definir Nueva Regla</h2></div>
+      <div class="cbody">
+        <div class="g2 mb">
+          <div class="field">
+            <label>Nombre de la Regla</label>
+            <div class="pfx-wrap">
+              <span class="pfx">R-</span>
+              <input type="text" id="ruleAlias" placeholder="JUDICIAL, MONTO, RCI…" oninput="cleanAlias(this)"/>
+            </div>
+          </div>
+          <div class="field">
+            <label>Acción / Resultado</label>
+            <select id="ruleResult">
+              <option value="OBSERVED">OBSERVED — Observado</option>
+              <option value="REJECTED">REJECTED — Rechazado</option>
+            </select>
+          </div>
+        </div>
+        <div class="g2 mb">
+          <div class="field">
+            <label>Tipo de Regla</label>
+            <select id="ruleType" onchange="onTypeChange()">
+              <option value="simple">Simple — Una sola comparación</option>
+              <option value="compound">Compuesta — Múltiples subcondiciones</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Tipo de Equivalencia</label>
+            <select id="equivType" onchange="onEquivChange()">
+              <option value="var">Entre Variables</option>
+              <option value="val">Valor Fijo</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- SIMPLE -->
+        <div id="simpleSection">
+          <div class="g3">
+            <div class="field">
+              <label>Primera Variable</label>
+              <select id="var1" onchange="onV1Change()"><option value="">— Variable —</option></select>
+            </div>
+            <div class="field">
+              <label>Comparación</label>
+              <select id="op1"></select>
+            </div>
+            <div class="field" id="rhs0">
+              <label>Segunda Variable / Valor</label>
+              <select id="v2s0"><option value="">— Variable —</option></select>
+            </div>
+          </div>
+        </div>
+
+        <!-- COMPOUND -->
+        <div id="compoundSection" style="display:none">
+          <div class="cmpd-box">
+            <div class="cmpd-head">
+              <span class="cmpd-title">⬡ Subcondiciones</span>
+              <button class="btn btn-o btn-sm" onclick="addSub()">+ Agregar subcondición</button>
+            </div>
+            <div class="op-row" id="globalOpRow" style="display:none">
+              <label>Operador global:</label>
+              <select id="globalOp">
+                <option value="&&">AND — Todas deben cumplirse</option>
+                <option value="||">OR — Al menos una debe cumplirse</option>
+              </select>
+            </div>
+            <div class="sub-items" id="subList"></div>
+          </div>
+        </div>
+
+        <div class="arow">
+          <button class="btn btn-g" onclick="addRule()">+ Agregar Regla</button>
+          <button class="btn btn-gh" onclick="clearForm()">Limpiar formulario</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Reglas -->
+    <div class="card">
+      <div class="card-head">
+        <div class="step">3</div>
+        <h2>Reglas del Producto</h2>
+        <span class="pill pill-c" id="rulesCnt" style="margin-left:auto">0 reglas</span>
+      </div>
+      <div class="cbody">
+        <div class="rules-list" id="rulesList">
+          <div class="empty-r"><div class="ei">📋</div><p>Aún no has definido reglas.<br>Completa el formulario y presiona "Agregar Regla".</p></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ SIDEBAR ══ -->
+  <div class="side-col">
+
+    <!-- Resumen -->
+    <div class="card">
+      <div class="card-head"><div class="step dark">i</div><h2>Resumen</h2></div>
+      <div class="cbody">
+        <div class="stat-row"><span class="slabel">Producto</span><span class="sval g" id="sProduct">—</span></div>
+        <div class="stat-row"><span class="slabel">Total reglas</span><span class="sval" id="sTotal">0</span></div>
+        <div class="stat-row"><span class="slabel">OBSERVED</span><span class="sval" id="sObs">0</span></div>
+        <div class="stat-row"><span class="slabel">REJECTED</span><span class="sval" id="sRej">0</span></div>
+      </div>
+    </div>
+
+    <!-- Exportar -->
+    <div class="card">
+      <div class="card-head"><div class="step">4</div><h2>Exportar JSON</h2></div>
+      <div class="cbody">
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <button class="btn btn-g" onclick="downloadJSON()" style="width:100%;justify-content:center">↓ Descargar archivo JSON</button>
+          <button class="btn btn-o" onclick="copyJSON()" style="width:100%;justify-content:center">⎘ Copiar al portapapeles</button>
+          <button class="btn btn-d" onclick="clearAll()" style="width:100%;justify-content:center;margin-top:3px">✕ Eliminar todas las reglas</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- JSON Preview -->
+    <div class="card">
+      <div class="card-head"><div class="step dark">{}</div><h2>Vista Previa JSON</h2></div>
+      <div class="cbody">
+        <div class="jbox" id="jsonPrev">{"rules": []}</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const VARS=[
+  {n:'Monto',t:'num'},{n:'Plazo',t:'num'},{n:'Nro_Entidades',t:'num'},
+  {n:'Score',t:'num'},{n:'R_PER',t:'num'},{n:'R_DUD',t:'num'},
+  {n:'R_DEF',t:'num'},{n:'R_CPP',t:'num'},{n:'R_NOR',t:'num'},
+  {n:'Calif_6M',t:'str'},{n:'Calif_12M',t:'str'},
+  {n:'Deterioro_6M',t:'num'},{n:'Deterioro_12M',t:'num'},
+  {n:'Cred_Castigados',t:'num'},{n:'Cred_Judicial',t:'num'},
+  {n:'Cred_Refinanciados',t:'num'},{n:'Protestos',t:'num'},
+  {n:'Tarjeta_Anul',t:'num'},{n:'Deuda_Total_Ext',t:'num'},
+  {n:'Valor_Cuota_Ext',t:'num'},{n:'Monto_Maximo',t:'num'},
+  {n:'Plazo_Maximo',t:'num'},{n:'RCI',t:'num'},{n:'CdP',t:'num'},
+];
+const NOPS=[{v:'>',l:'> Mayor que'},{v:'<',l:'< Menor que'},{v:'==',l:'= Igual a'},{v:'!=',l:'<> Diferente a'},{v:'>=',l:'>= Mayor o igual a'},{v:'<=',l:'<= Menor o igual a'}];
+const SOPS=[{v:'==',l:'= Igual a'},{v:'!=',l:'<> Diferente a'},{v:'contains',l:'∋ Contiene'},{v:'!contains',l:'∌ No contiene'}];
+
+let rules=[], subs=[];
+const vtype=n=>{ const v=VARS.find(x=>x.n===n); return v?v.t:null; };
+const compat=n=>{ const t=vtype(n); return VARS.filter(v=>v.t===t&&v.n!==n); };
+
+window.onload=()=>{
+  fillVSel('var1');
+  fillOps('op1',NOPS);
+  buildRHS(0,null,'var');
+};
+
+function fillVSel(id,exclude){
+  const s=document.getElementById(id); if(!s) return;
+  const c=s.value;
+  s.innerHTML='<option value="">— Variable —</option>';
+  VARS.forEach(v=>{
+    if(exclude&&v.n===exclude) return;
+    const o=document.createElement('option');
+    o.value=v.n; o.textContent=`${v.n}  [${v.t.toUpperCase()}]`;
+    s.appendChild(o);
+  });
+  if(c) s.value=c;
+}
+
+function fillOps(id,ops){
+  const s=document.getElementById(id); if(!s) return;
+  const c=s.value; s.innerHTML='';
+  ops.forEach(op=>{ const o=document.createElement('option'); o.value=op.v; o.textContent=op.l; s.appendChild(o); });
+  if(ops.find(x=>x.v===c)) s.value=c;
+}
+
+function buildRHS(idx,v1,eq){
+  const c=document.getElementById(`rhs${idx}`); if(!c) return;
+  c.innerHTML='<label>Segunda Variable / Valor</label>';
+  if(eq==='var'){
+    const s=document.createElement('select'); s.id=`v2s${idx}`;
+    s.innerHTML='<option value="">— Variable —</option>';
+    (v1?compat(v1):VARS).forEach(v=>{ const o=document.createElement('option'); o.value=v.n; o.textContent=`${v.n}  [${v.t.toUpperCase()}]`; s.appendChild(o); });
+    c.appendChild(s);
+  } else {
+    const i=document.createElement('input'); i.type='text'; i.id=`v2i${idx}`;
+    i.placeholder=vtype(v1)==='str'?"Ej: 'NOR'":"Ej: 0";
+    c.appendChild(i);
+  }
+}
+
+function onV1Change(){ const v=document.getElementById('var1').value; fillOps('op1',vtype(v)==='str'?SOPS:NOPS); buildRHS(0,v,document.getElementById('equivType').value); }
+function onEquivChange(){ const eq=document.getElementById('equivType').value; buildRHS(0,document.getElementById('var1').value,eq); subs.forEach(id=>rebuildSubRHS(id)); }
+function onTypeChange(){ const t=document.getElementById('ruleType').value; document.getElementById('simpleSection').style.display=t==='simple'?'':'none'; document.getElementById('compoundSection').style.display=t==='compound'?'':'none'; if(t==='compound'&&subs.length===0) addSub(); }
+function cleanAlias(i){ i.value=i.value.toUpperCase().replace(/[^A-Z0-9\- ]/g,''); }
+
+function addSub(){ subs.push(Date.now()); renderSubs(); }
+function removeSub(id){ subs=subs.filter(x=>x!==id); renderSubs(); }
+function renderSubs(){
+  const list=document.getElementById('subList');
+  document.getElementById('globalOpRow').style.display=subs.length>1?'':'none';
+  list.innerHTML='';
+  subs.forEach((id,i)=>{
+    const d=document.createElement('div'); d.className='sub-item'; d.id=`sub_${id}`;
+    d.innerHTML=`<div class="sub-hd"><span class="sub-num">Sub-condición ${i+1}</span><button class="btn btn-d" onclick="removeSub(${id})">✕</button></div>
+    <div class="g3">
+      <div class="field"><label>Primera Variable</label>
+        <select id="sv1_${id}" onchange="onSubV1(${id})"><option value="">— Variable —</option>
+          ${VARS.map(v=>`<option value="${v.n}">${v.n}  [${v.t.toUpperCase()}]</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Comparación</label>
+        <select id="sop_${id}">${NOPS.map(op=>`<option value="${op.v}">${op.l}</option>`).join('')}</select></div>
+      <div class="field" id="rhs${id}"><label>Segunda Variable / Valor</label>
+        <select id="v2s${id}"><option value="">— Variable —</option>
+          ${VARS.map(v=>`<option value="${v.n}">${v.n}  [${v.t.toUpperCase()}]</option>`).join('')}
+        </select></div>
+    </div>`;
+    list.appendChild(d);
+  });
+}
+function onSubV1(id){ const v=document.getElementById(`sv1_${id}`).value; fillOps(`sop_${id}`,vtype(v)==='str'?SOPS:NOPS); rebuildSubRHS(id); }
+function rebuildSubRHS(id){ buildRHS(id,document.getElementById(`sv1_${id}`)?.value,document.getElementById('equivType').value); }
+
+function getRHS(idx,v1){
+  const eq=document.getElementById('equivType').value;
+  if(eq==='var'){
+    const s=document.getElementById(`v2s${idx}`);
+    if(!s||!s.value){ toast('Selecciona la segunda variable','e'); return null; }
+    if(vtype(v1)!==vtype(s.value)){ toast('Las variables deben ser del mismo tipo de dato','e'); return null; }
+    return s.value;
+  } else {
+    const i=document.getElementById(`v2i${idx}`);
+    if(!i||i.value.trim()===''){toast('Ingresa un valor para comparar','e'); return null;}
+    let v=i.value.trim();
+    if(vtype(v1)==='str'&&!v.startsWith("'")&&!v.startsWith('"')) v=`'${v}'`;
+    return v;
+  }
+}
+
+function condStr(v,op,rhs){
+  if(op==='contains') return `${v}.includes(${rhs})`;
+  if(op==='!contains') return `!${v}.includes(${rhs})`;
+  return `${v} ${op} ${rhs}`;
+}
+function buildSimple(){
+  const v=document.getElementById('var1').value;
+  if(!v){toast('Selecciona la primera variable','e');return null;}
+  const r=getRHS(0,v); if(r===null) return null;
+  return condStr(v,document.getElementById('op1').value,r);
+}
+function buildCompound(){
+  if(subs.length===0){toast('Agrega al menos una subcondición','e');return null;}
+  const parts=[];
+  for(const id of subs){
+    const v=document.getElementById(`sv1_${id}`)?.value;
+    if(!v){toast('Selecciona la primera variable en subcondición','e');return null;}
+    const r=getRHS(id,v); if(r===null) return null;
+    parts.push(condStr(v,document.getElementById(`sop_${id}`).value,r));
+  }
+  const g=document.getElementById('globalOp').value;
+  return subs.length===1?parts[0]:`(${parts.join(` ${g} `)})`;
+}
+
+function addRule(){
+  const p=document.getElementById('producto').value;
+  if(!p){toast('Selecciona un producto primero','e');return;}
+  const raw=document.getElementById('ruleAlias').value.trim();
+  if(!raw){toast('Ingresa el nombre de la regla','e');return;}
+  const alias='R-'+raw.replace(/^R-/i,'');
+  const result=document.getElementById('ruleResult').value;
+  const cond=document.getElementById('ruleType').value==='simple'?buildSimple():buildCompound();
+  if(!cond) return;
+  rules.push({alias,condition:cond,result});
+  renderRules(); updatePrev(); updateStats(); clearForm();
+  toast(`Regla ${alias} agregada ✓`);
+}
+
+function renderRules(){
+  const l=document.getElementById('rulesList');
+  document.getElementById('rulesCnt').textContent=`${rules.length} regla${rules.length===1?'':'s'}`;
+  if(!rules.length){ l.innerHTML=`<div class="empty-r"><div class="ei">📋</div><p>Aún no has definido reglas.<br>Completa el formulario y presiona "Agregar Regla".</p></div>`; return; }
+  l.innerHTML='';
+  rules.forEach((r,i)=>{
+    const d=document.createElement('div'); d.className='rule-item';
+    d.innerHTML=`<div class="ridx">${i+1}</div><div class="rbody"><div class="ralias">${r.alias}</div><div class="rcond">${r.condition}</div></div><span class="pill ${r.result==='OBSERVED'?'pill-o':'pill-r'}">${r.result}</span><button class="btn btn-d" onclick="removeRule(${i})">✕</button>`;
+    l.appendChild(d);
+  });
+}
+function removeRule(i){ rules.splice(i,1); renderRules(); updatePrev(); updateStats(); toast('Regla eliminada'); }
+
+function onProdChange(){
+  const p=document.getElementById('producto').value;
+  const fn=document.getElementById('fnameText');
+  if(p){ fn.textContent=`r-${p.toLowerCase()}.json`; fn.className='fn'; }
+  else { fn.textContent='Selecciona un producto'; fn.style.color='var(--muted)'; fn.className=''; }
+  const tb=document.getElementById('topbarProd');
+  p?(tb.textContent=p,tb.classList.add('show')):tb.classList.remove('show');
+  updateStats();
+}
+function updateStats(){
+  const p=document.getElementById('producto').value;
+  document.getElementById('sProduct').textContent=p||'—';
+  document.getElementById('sTotal').textContent=rules.length;
+  document.getElementById('sObs').textContent=rules.filter(r=>r.result==='OBSERVED').length;
+  document.getElementById('sRej').textContent=rules.filter(r=>r.result==='REJECTED').length;
+}
+function updatePrev(){
+  const raw=JSON.stringify({rules},null,2);
+  const h=raw.replace(/("[\w]+")\s*:/g,'<span class="jk">$1</span>:').replace(/:\s*("([^"]*)")/g,': <span class="js">$1</span>').replace(/:\s*(\d+\.?\d*)/g,': <span class="jn">$1</span>').replace(/:\s*(true|false|null)/g,': <span class="jb">$1</span>');
+  document.getElementById('jsonPrev').innerHTML=h;
+}
+function downloadJSON(){
+  const p=document.getElementById('producto').value;
+  if(!p){toast('Selecciona un producto primero','e');return;}
+  if(!rules.length){toast('No hay reglas para exportar','e');return;}
+  const fn=`r-${p.toLowerCase()}.json`;
+  const b=new Blob([JSON.stringify({rules},null,2)],{type:'application/json'});
+  const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=fn; a.click(); URL.revokeObjectURL(u);
+  toast(`Descargado: ${fn}`);
+}
+function copyJSON(){ navigator.clipboard.writeText(JSON.stringify({rules},null,2)).then(()=>toast('JSON copiado al portapapeles')); }
+function clearAll(){ if(rules.length&&!confirm('¿Eliminar todas las reglas?')) return; rules=[]; renderRules(); updatePrev(); updateStats(); toast('Reglas eliminadas'); }
+function clearForm(){
+  document.getElementById('ruleAlias').value='';
+  document.getElementById('var1').value='';
+  document.getElementById('ruleType').value='simple';
+  document.getElementById('equivType').value='var';
+  document.getElementById('simpleSection').style.display='';
+  document.getElementById('compoundSection').style.display='none';
+  subs=[]; document.getElementById('subList').innerHTML='';
+  fillOps('op1',NOPS); buildRHS(0,null,'var');
+}
+function toast(msg,type){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className=`toast ${type==='e'?'terr':'tok'} show`;
+  setTimeout(()=>el.classList.remove('show'),2600);
+}
+</script>
+</body>
+</html>
